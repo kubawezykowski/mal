@@ -12,11 +12,13 @@ class MalMap;
 class MalString;
 class Reader;
 
-class UnbalancedToken : public std::runtime_error
+class UnbalancedTokenException : public std::runtime_error
 {
 public:
     using std::runtime_error::runtime_error;
 };
+
+class EmptyTokenListException : public std::exception{};
 
 std::vector<std::string_view> tokenize(const std::string& input);
 MalType* read_str(const std::string& input);

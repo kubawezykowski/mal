@@ -102,11 +102,11 @@ std::vector<std::string_view> tokenize(const std::string& input)
                         }
                         ++index;
                     }
-                    throw UnbalancedToken("unbalanced \"");
+                    throw UnbalancedTokenException("unbalanced \"");
                 }
                 case ';':
                 {
-                    const size_t start = index;
+                    //const size_t start = index;
                     while (index < input.length())
                     {
                         c = input.at(index);
@@ -114,7 +114,8 @@ std::vector<std::string_view> tokenize(const std::string& input)
                             break;
                         ++index;
                     }
-                    return view.substr(start, index - start);
+                    break;
+                    //return view.substr(start, index - start);
                 }
                 default:
                     return tokenize_symbol();
@@ -137,6 +138,11 @@ std::vector<std::string_view> tokenize(const std::string& input)
 MalType* read_str(const std::string& input)
 {
     auto tokens = tokenize(input);
+
+    if (tokens.empty())
+    {
+        throw EmptyTokenListException();
+    }
 
     Reader reader{tokens};
 
@@ -186,7 +192,7 @@ MalList* read_list(Reader& reader)
         list->append(read_form(reader));
     }
 
-    throw UnbalancedToken("unbalanced )");
+    throw UnbalancedTokenException("unbalanced )");
 }
 
 MalVector* read_vector(Reader& reader)
@@ -205,7 +211,7 @@ MalVector* read_vector(Reader& reader)
         vector->append(read_form(reader));
     }
 
-    throw UnbalancedToken("unbalanced ]");
+    throw UnbalancedTokenException("unbalanced ]");
 }
 
 MalMap* read_map(Reader& reader)
@@ -228,7 +234,7 @@ MalMap* read_map(Reader& reader)
         }
     }
 
-    throw UnbalancedToken("unbalanced }");
+    throw UnbalancedTokenException("unbalanced }");
 }
 
 MalList* read_qouted_value(Reader& reader)
