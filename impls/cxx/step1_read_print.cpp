@@ -17,7 +17,7 @@ MalType* EVAL(MalType* value)
 
 std::string PRINT(MalType* value)
 {
-	return pr_str(value);
+	return pr_str(value, true);
 }
 
 std::string rep(std::string str)
@@ -41,7 +41,15 @@ int main()
 		{
 			break;
 		}
-		std::cout << rep(line) << '\n';
+
+		try 
+		{
+			std::cout << rep(line) << '\n';
+		}
+		catch (const UnbalancedToken& e)
+		{
+			std::cerr << "Runtime error: " << e.what() << '\n';
+		}
 
 		linenoise::AddHistory(line.c_str());
 	}

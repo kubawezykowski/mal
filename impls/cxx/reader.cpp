@@ -2,6 +2,7 @@
 #include <charconv>
 #include "reader.h"
 #include "types.h"
+#include "string_helpers.h"
 
 std::vector<std::string_view> tokenize(const std::string& input)
 {
@@ -101,8 +102,7 @@ std::vector<std::string_view> tokenize(const std::string& input)
                         }
                         ++index;
                     }
-                    std::cerr << "EOF\n";
-                    return view.substr(start, index - start);
+                    throw UnbalancedToken("unbalanced \"");
                 }
                 case ';':
                 {
@@ -151,6 +151,14 @@ MalType* read_form(Reader& reader)
         {
             return read_list(reader);
         }
+        else if (*token == "[")
+        {
+            return read_vector(reader);
+        }
+        else if (*token == "{")
+        {
+            return read_map(reader);
+        }
         else
         {
             return read_atom(reader);
@@ -176,8 +184,49 @@ MalList* read_list(Reader& reader)
         list->append(read_form(reader));
     }
 
-    std::cerr << "EOF\n";
-    return list;
+    throw UnbalancedToken("unbalanced )");
+}
+
+MalVector* read_vector(Reader& reader)
+{
+    reader.next(); // consume "["
+
+    MalVector* vector = new MalVector();
+
+    while (auto token = reader.peek())
+    {
+        if (*token == "]")
+        {
+            reader.next();
+            return vector;
+        }
+        vector->append(read_form(reader));
+    }
+
+    throw UnbalancedToken("unbalanced ]");
+}
+
+MalMap* read_map(Reader& reader)
+{
+    reader.next(); // consume "{"
+
+    MalMap* map = new MalMap();
+
+    while (auto token = reader.peek())
+    {
+        if (*token == "}")
+        {
+            reader.next();
+            return map;
+        }
+        auto key = read_form(reader);
+        if (auto value = reader.peek())
+        {
+            map->insert(key, read_form(reader));
+        }
+    }
+
+    throw UnbalancedToken("unbalanced }");
 }
 
 MalType* read_atom(Reader& reader)
@@ -186,6 +235,10 @@ MalType* read_atom(Reader& reader)
     
     switch (token[0])
     {
+    case '\"':
+        return new MalString(deescape_string(std::string(token.substr(1, token.length() - 2))));
+    case ':':
+        return new MalKeyword(std::string(token));
     case '-':
         if (token.length() == 1 || std::isdigit(token[2]) == false)
         {
