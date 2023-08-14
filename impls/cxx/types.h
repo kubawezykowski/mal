@@ -10,6 +10,9 @@ enum class EType
     Symbol,
     Keyword,
     String,
+    Nil,
+    True,
+    False,
     Integer
 };
 
@@ -64,6 +67,36 @@ public:
     std::string to_str(bool print_readably = false) const override { return print_readably ? escape_string(m_string) : m_string; }
 private:
     std::string m_string;
+};
+
+class MalNil : public MalType
+{
+public:
+    EType type() const override { return EType::Nil; }
+    std::string to_str(bool) const override { return "nil"; }
+    static MalNil* instance() { static MalNil instance; return &instance; }
+private:
+    MalNil() = default;
+};
+
+class MalTrue : public MalType
+{
+public:
+    EType type() const override { return EType::True; }
+    std::string to_str(bool) const override { return "true"; }
+    static MalTrue* instance() { static MalTrue instance; return &instance; }
+private:
+    MalTrue() = default;
+};
+
+class MalFalse : public MalType
+{
+public:
+    EType type() const override { return EType::False; }
+    std::string to_str(bool) const override { return "false"; }
+    static MalFalse* instance() { static MalFalse instance; return &instance; }
+private:
+    MalFalse() = default;
 };
 
 class MalInteger : public MalType

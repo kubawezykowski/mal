@@ -24,6 +24,8 @@ MalType* read_form(Reader& reader);
 MalList* read_list(Reader& reader);
 MalVector* read_vector(Reader& reader);
 MalMap* read_map(Reader& reader);
+MalList* read_qouted_value(Reader& reader);
+MalList* read_with_meta(Reader& reader);
 MalType* read_atom(Reader& reader);
 
 class Reader

@@ -147,20 +147,22 @@ MalType* read_form(Reader& reader)
 {
     if (auto token = reader.peek())
     {
-        if (*token == "(")
+        switch ((*token)[0])
         {
+        case '(':
             return read_list(reader);
-        }
-        else if (*token == "[")
-        {
+        case '[':
             return read_vector(reader);
-        }
-        else if (*token == "{")
-        {
+        case '{':
             return read_map(reader);
-        }
-        else
-        {
+        case '\'':
+        case '`':
+        case '~':
+        case '@':
+            return read_qouted_value(reader);
+        case '^':
+            return read_with_meta(reader);
+        default:
             return read_atom(reader);
         }
     }
@@ -229,6 +231,57 @@ MalMap* read_map(Reader& reader)
     throw UnbalancedToken("unbalanced }");
 }
 
+MalList* read_qouted_value(Reader& reader)
+{
+    auto quote = reader.next();
+
+    MalList* list = new MalList();
+
+    switch ((*quote)[0])
+    {
+    case '\'':
+        list->append(new MalSymbol("quote"));
+        break;
+    case '`':
+        list->append(new MalSymbol("quasiquote"));
+        break;
+    case '~':
+        if (quote->length() == 1)
+        {
+            list->append(new MalSymbol("unquote"));
+        }
+        else
+        {
+            list->append(new MalSymbol("splice-unquote"));
+        }
+        break;
+    case '@':
+        list->append(new MalSymbol("deref"));
+        break;
+    default:
+        break;
+    }
+
+    list->append(read_form(reader));
+
+    return list;
+}
+MalList* read_with_meta(Reader& reader)
+{
+    reader.next(); // consume "^"
+
+    MalList* list = new MalList();
+
+    auto meta = read_form(reader);
+    auto value = read_form(reader);
+
+    list->append(new MalSymbol("with-meta"));
+    list->append(value);
+    list->append(meta);
+
+    return list;
+}
+
 MalType* read_atom(Reader& reader)
 {
     auto token = *reader.next();
@@ -261,6 +314,18 @@ MalType* read_atom(Reader& reader)
         break;
     
     default:
+        if (token == "nil")
+        {
+            return MalNil::instance();
+        }
+        else if (token == "true")
+        {
+            return MalTrue::instance();
+        }
+        else if (token == "false")
+        {
+            return MalFalse::instance();
+        }
         break;
     }
     
