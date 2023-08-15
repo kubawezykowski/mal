@@ -299,7 +299,7 @@ MalType* read_atom(Reader& reader)
     case ':':
         return new MalKeyword(std::string(token));
     case '-':
-        if (token.length() == 1 || std::isdigit(token[2]) == false)
+        if (token.length() == 1 || std::isdigit(token[1]) == false)
         {
             break;
         }

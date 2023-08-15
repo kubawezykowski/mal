@@ -72,3 +72,8 @@ std::string MalMap::to_str(bool print_readably) const
 
     return result;
 }
+
+MalType* MalFunction::call(span<MalType*> arguments)
+{
+    return m_function(arguments);
+}

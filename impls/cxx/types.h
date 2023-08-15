@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "string_helpers.h"
+#include "span.h"
 
 enum class EType
 {
@@ -13,7 +14,8 @@ enum class EType
     Nil,
     True,
     False,
-    Integer
+    Integer,
+    Function
 };
 
 class MalType
@@ -23,10 +25,10 @@ public:
     virtual std::string to_str(bool print_readably = false) const = 0;
 
     template<typename T>
-    T* as() { return static_cast<T*>(this); }
+    T& as() { return static_cast<T&>(*this); }
 
     template<typename T>
-    const T* as() const { return static_cast<const T*>(this); }
+    const T& as() const { return static_cast<const T&>(*this); }
 };
 
 class MalList : public MalType
@@ -35,6 +37,14 @@ public:
     void append(MalType*);
     EType type() const override { return EType::List; }
     std::string to_str(bool print_readably = false) const override;
+
+    MalType* head() { return m_elements.empty() ? nullptr : m_elements.front(); }
+    span<MalType*> tail() { return m_elements.size() > 1 ? span<MalType*>{std::next(m_elements.data()), m_elements.size() - 1} : span<MalType*>{};}
+
+    auto begin() { return m_elements.begin(); }
+    auto end() { return m_elements.end(); }
+
+    bool is_empty() const { return m_elements.empty(); }
 private:
     std::vector<MalType*> m_elements;
 };
@@ -45,6 +55,7 @@ public:
     MalSymbol(std::string symbol) : m_symbol(symbol) {}
     EType type() const override { return EType::Symbol; }
     std::string to_str(bool) const override { return m_symbol; }
+    const std::string& name() const { return m_symbol; }
 private:
     std::string m_symbol;
 };
@@ -105,6 +116,7 @@ public:
     MalInteger(int number) : m_number(number) {}
     EType type() const override { return EType::Integer; }
     std::string to_str(bool) const override { return std::to_string(m_number); }
+    int value() const { return m_number; }
 private:
     int m_number { 0 };
 };
@@ -115,6 +127,9 @@ public:
     void append(MalType*);
     EType type() const override { return EType::Vector; }
     std::string to_str(bool print_readably = false) const override;
+
+    auto begin() { return m_elements.begin(); }
+    auto end() { return m_elements.end(); }
 private:
     std::vector<MalType*> m_elements;
 };
@@ -125,8 +140,10 @@ public:
     void insert(MalType* key, MalType* value);
     EType type() const override { return EType::Map; }
     std::string to_str(bool print_readably = false) const override;
-private:
 
+    auto begin() { return m_map.begin(); }
+    auto end() { return m_map.end(); }
+private:
     struct MalTypeHash
     {
         std::size_t operator()(const MalType* t) const
@@ -142,4 +159,17 @@ private:
         }
     };
     std::unordered_map<MalType*, MalType*, MalTypeHash, MalTypeEqual> m_map;
+};
+
+class MalFunction : public MalType
+{
+public:
+    using MalFnPtr = MalType*(*)(span<MalType*>);
+
+    MalFunction(MalFnPtr function) : m_function(function) {}
+    EType type() const override { return EType::Function; }
+    std::string to_str(bool) const override { return "<fn>"; }
+    MalType* call(span<MalType*>);
+private:
+    MalFnPtr m_function;
 };
