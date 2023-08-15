@@ -41,6 +41,9 @@ public:
     MalType* head() { return m_elements.empty() ? nullptr : m_elements.front(); }
     span<MalType*> tail() { return m_elements.size() > 1 ? span<MalType*>{std::next(m_elements.data()), m_elements.size() - 1} : span<MalType*>{};}
 
+    MalType* at(size_t index) { return m_elements.at(index); }
+    size_t size() const { return m_elements.size(); }
+
     auto begin() { return m_elements.begin(); }
     auto end() { return m_elements.end(); }
 
