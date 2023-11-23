@@ -215,12 +215,12 @@ int main()
     const auto path = "history.txt";
     linenoise::LoadHistory(path);
 
-    Env env(nullptr);
+    Env repl_env(nullptr);
 
-    env.set("+", new MalFunction(add));
-    env.set("-", new MalFunction(sub));
-    env.set("*", new MalFunction(mul));
-    env.set("/", new MalFunction(div));
+    repl_env.set("+", new MalFunction(add));
+    repl_env.set("-", new MalFunction(sub));
+    repl_env.set("*", new MalFunction(mul));
+    repl_env.set("/", new MalFunction(div));
 
     while (true)
     {
@@ -234,7 +234,7 @@ int main()
 
         try 
         {
-            std::cout << rep(line, env) << '\n';
+            std::cout << rep(line, repl_env) << '\n';
         }
         catch (const EmptyTokenListException& e)
         {
