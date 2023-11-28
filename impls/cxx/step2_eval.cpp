@@ -187,7 +187,7 @@ MalType* mul(span<MalType*> arguments)
     return new MalInteger(first->as<MalInteger>().value() * second->as<MalInteger>().value());
 }
 
-MalType* div(span<MalType*> arguments)
+MalType* divide(span<MalType*> arguments)
 {
     if (arguments.size() != 2)
         throw WrongArgumentCountException("wrong argument count - expected 2");
@@ -211,7 +211,7 @@ int main()
     env.add_symbol_value("+", new MalFunction(add));
     env.add_symbol_value("-", new MalFunction(sub));
     env.add_symbol_value("*", new MalFunction(mul));
-    env.add_symbol_value("/", new MalFunction(div));
+    env.add_symbol_value("/", new MalFunction(divide));
 
     while (true)
     {

@@ -4,6 +4,7 @@
 #include "printer.h"
 #include "types.h"
 #include "env.h"
+#include "core.h"
 
 class MalType;
 
@@ -74,6 +75,65 @@ MalType* EVAL(MalType* ast, Env& env)
                         let_env->set(binding_symbol.name(), value);
                     }
                     return EVAL(list.at(2), *let_env);
+                }
+                else if (first_symbol.name() == "do")
+                {
+                    if (list.size() == 1)
+                    {
+                        throw std::runtime_error("do expected at least one argument");
+                    }
+                    
+                    MalType* result = MalNil::instance();
+                    for (auto element = ++list.begin(); element != list.end(); ++element)
+                    {
+                        result = EVAL(*element, env);
+                    }
+                    return result;
+                }
+                else if (first_symbol.name() == "if")
+                {
+                    if (list.size() != 3 && list.size() != 4)
+                    {
+                        throw std::runtime_error("if wrong argument size");
+                    }
+                    
+                    MalType* condition_result = EVAL(list.at(1), env);
+                    if (condition_result != MalNil::instance() && condition_result != MalFalse::instance())
+                    {
+                        return EVAL(list.at(2), env);
+                    }
+                    else if (list.size() == 4)
+                    {
+                        return EVAL(list.at(3), env);
+                    }
+
+                    return MalNil::instance();
+                }
+                else if (first_symbol.name() == "fn*")
+                {
+                    if (list.size() != 3)
+                    {
+                        throw std::runtime_error("fn* expected 2 arguments");
+                    }
+                    auto first_argument = list.at(1);
+                    if (first_argument->is_sequence() == false)
+                    {
+                        throw std::runtime_error("fn* expected a sequence of bindings");
+                    }
+                    auto binds = &first_argument->as<MalSequence>();
+                    auto body = list.at(2);
+                    Env* outer_env = &env;
+                    auto closure = [outer_env, binds, body](span<MalType*> arguments)
+                    {
+                        auto exprs = new MalList();
+                        for (auto value : arguments)
+                        {
+                            exprs->append(value);
+                        }
+                        Env* closure_env = new Env(outer_env, binds, exprs);
+                        return EVAL(body, *closure_env);
+                    };
+                    return new MalFunction(closure);
                 }
             }
             auto evaluated_list = eval_ast(ast, env);
@@ -153,62 +213,6 @@ std::string rep(std::string str, Env& env)
     return PRINT(result);
 }
 
-MalType* add(span<MalType*> arguments)
-{
-    if (arguments.size() != 2)
-        throw std::runtime_error("wrong argument count - expected 2");
-    
-    auto first = arguments[0];
-    auto second = arguments[1];
-
-    if (first->type() != EType::Integer || second->type() != EType::Integer)
-        throw std::runtime_error("wrong argument type - expected Integer");
-
-    return new MalInteger(first->as<MalInteger>().value() + second->as<MalInteger>().value());
-}
-
-MalType* sub(span<MalType*> arguments)
-{
-    if (arguments.size() != 2)
-        throw std::runtime_error("wrong argument count - expected 2");
-    
-    auto first = arguments[0];
-    auto second = arguments[1];
-
-    if (first->type() != EType::Integer || second->type() != EType::Integer)
-        throw std::runtime_error("wrong argument type - expected Integer");
-
-    return new MalInteger(first->as<MalInteger>().value() - second->as<MalInteger>().value());
-}
-
-MalType* mul(span<MalType*> arguments)
-{
-    if (arguments.size() != 2)
-        throw std::runtime_error("wrong argument count - expected 2");
-    
-    auto first = arguments[0];
-    auto second = arguments[1];
-
-    if (first->type() != EType::Integer || second->type() != EType::Integer)
-        throw std::runtime_error("wrong argument type - expected Integer");
-
-    return new MalInteger(first->as<MalInteger>().value() * second->as<MalInteger>().value());
-}
-
-MalType* divide(span<MalType*> arguments)
-{
-    if (arguments.size() != 2)
-        throw std::runtime_error("wrong argument count - expected 2");
-    
-    auto first = arguments[0];
-    auto second = arguments[1];
-
-    if (first->type() != EType::Integer || second->type() != EType::Integer)
-        throw std::runtime_error("wrong argument type - expected Integer");
-
-    return new MalInteger(first->as<MalInteger>().value() / second->as<MalInteger>().value());
-}
-
 int main()
 {
     const auto path = "history.txt";
@@ -216,10 +220,12 @@ int main()
 
     Env repl_env(nullptr);
 
-    repl_env.set("+", new MalFunction(add));
-    repl_env.set("-", new MalFunction(sub));
-    repl_env.set("*", new MalFunction(mul));
-    repl_env.set("/", new MalFunction(divide));
+    for (auto& [symbol, func] : core::ns)
+    {
+        repl_env.set(symbol, new MalFunction(func));
+    }
+
+    rep("(def! not (fn* (a) (if a false true)))", repl_env);
 
     while (true)
     {

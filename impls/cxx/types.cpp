@@ -23,19 +23,35 @@ std::string print_elements(std::vector<MalType*> elements, char opening_characte
     return result;
 }
 
-void MalList::append(MalType* value)
+void MalSequence::append(MalType* value)
 {
     m_elements.push_back(value);
+}
+
+bool MalSequence::operator==(const MalType* other) const
+{
+    if (other->is_sequence())
+    {
+        auto& other_sequence = other->as<MalSequence>();
+        if (other_sequence.size() == size())
+        {
+            for (size_t i = 0; i < size(); ++i)
+            {
+                if (*at(i) != other_sequence.at(i))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    return false;
 }
 
 std::string MalList::to_str(bool print_readably) const
 {
     return print_elements(m_elements, '(', ')', print_readably);
-}
-
-void MalVector::append(MalType* value)
-{
-    m_elements.push_back(value);
 }
 
 std::string MalVector::to_str(bool print_readably) const
@@ -71,6 +87,11 @@ std::string MalMap::to_str(bool print_readably) const
     }
 
     return result;
+}
+
+bool MalMap::operator==(const MalType*) const
+{
+    return false;
 }
 
 MalType* MalFunction::call(span<MalType*> arguments)

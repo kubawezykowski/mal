@@ -2,6 +2,8 @@
 #include <string>
 
 class MalType;
+class MalList;
+class MalSequence;
 
 class Env
 {
@@ -14,6 +16,7 @@ public:
     };
 
     Env(Env* outer) : m_outer(outer) {}
+    Env(Env* outer, MalSequence* binds, MalList* exprs);
 
     void set(const key_t& key, MalType* value);
     Env* find(const key_t& key);
