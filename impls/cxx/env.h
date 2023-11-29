@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "span.h"
 
 class MalType;
 class MalList;
@@ -16,7 +17,7 @@ public:
     };
 
     Env(Env* outer) : m_outer(outer) {}
-    Env(Env* outer, MalSequence* binds, MalList* exprs);
+    Env(Env* outer, MalSequence* binds, span<MalType*> exprs);
 
     void set(const key_t& key, MalType* value);
     Env* find(const key_t& key);

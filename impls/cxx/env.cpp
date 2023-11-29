@@ -1,10 +1,10 @@
 #include "env.h"
 #include "types.h"
 
-Env::Env(Env* outer, MalSequence* binds, MalList* exprs)
+Env::Env(Env* outer, MalSequence* binds, span<MalType*> exprs)
     : m_outer(outer)
 {
-    auto exprs_it = exprs->begin();
+    auto exprs_it = exprs.begin();
 
     for (size_t i = 0; i < binds->size(); ++i)
     {
@@ -20,7 +20,7 @@ Env::Env(Env* outer, MalSequence* binds, MalList* exprs)
 
             auto& rest_symbol_name = binds->at(i + 1)->as<MalSymbol>().name();
             auto rest = new MalList();
-            while (exprs_it != exprs->end())
+            while (exprs_it != exprs.end())
             {
                 rest->append(*exprs_it);
                 ++exprs_it;
@@ -29,7 +29,7 @@ Env::Env(Env* outer, MalSequence* binds, MalList* exprs)
             break;
         }
 
-        if (exprs_it == exprs->end())
+        if (exprs_it == exprs.end())
             throw std::runtime_error("env: not enough arguments");
 
         set(symbol_name, *exprs_it);

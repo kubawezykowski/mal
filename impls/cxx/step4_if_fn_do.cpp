@@ -125,12 +125,7 @@ MalType* EVAL(MalType* ast, Env& env)
                     Env* outer_env = &env;
                     auto closure = [outer_env, binds, body](span<MalType*> arguments)
                     {
-                        auto exprs = new MalList();
-                        for (auto value : arguments)
-                        {
-                            exprs->append(value);
-                        }
-                        Env* closure_env = new Env(outer_env, binds, exprs);
+                        Env* closure_env = new Env(outer_env, binds, arguments);
                         return EVAL(body, *closure_env);
                     };
                     return new MalFunction(closure);

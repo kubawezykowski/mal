@@ -3,6 +3,8 @@
 #include "string_helpers.h"
 #include "span.h"
 
+class Env;
+
 enum class EType
 {
     List,
@@ -15,7 +17,8 @@ enum class EType
     True,
     False,
     Integer,
-    Function
+    Function,
+    UserFunction,
 };
 
 class MalType
@@ -178,6 +181,7 @@ private:
     std::unordered_map<MalType*, MalType*, MalTypeHash, MalTypeEqual> m_map;
 };
 
+// native function
 class MalFunction : public MalType
 {
 public:
@@ -191,4 +195,22 @@ public:
     MalType* call(span<MalType*>);
 private:
     MalFn m_function;
+};
+
+class MalUserFunction : public MalType
+{
+public:
+    MalUserFunction(MalType* body, MalSequence* params, Env* env) : m_body(body), m_params(params), m_env(env) {}
+    EType type() const override { return EType::UserFunction; }
+    std::string to_str(bool) const override { return "<fn>"; }
+    bool operator==(const MalType* other) const override { return other == this; }
+
+    MalType* get_body() const { return m_body; }
+    MalSequence* get_params() const { return m_params; }
+    Env* get_env() const { return m_env; }
+
+private:
+    MalType* m_body;
+    MalSequence* m_params;
+    Env* m_env;
 };
