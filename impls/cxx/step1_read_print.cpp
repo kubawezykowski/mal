@@ -60,3 +60,7 @@ int main()
 
     linenoise::SaveHistory(path);
 }
+
+// to prevent linking errors after step6
+class Env;
+MalType* EVAL(MalType* ast, Env*) { return ast; }

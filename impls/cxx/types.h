@@ -19,6 +19,7 @@ enum class EType
     Integer,
     Function,
     UserFunction,
+    Atom,
 };
 
 class MalType
@@ -27,6 +28,7 @@ public:
     virtual EType type() const = 0;
     virtual std::string to_str(bool print_readably = false) const = 0;
     virtual bool is_sequence() const { return false; }
+    virtual bool is_callable() const { return false; }
     virtual bool operator==(const MalType* other) const = 0;
     bool operator!=(const MalType* other) const { return !(*this == other); }
 
@@ -181,8 +183,17 @@ private:
     std::unordered_map<MalType*, MalType*, MalTypeHash, MalTypeEqual> m_map;
 };
 
+class MalCallable : public MalType
+{
+public:
+    bool is_callable() const override{ return true; }
+    std::string to_str(bool) const override { return "<fn>"; }
+    bool operator==(const MalType* other) const override { return other == this; }
+    virtual MalType* call(span<MalType*> arguments) = 0;
+};
+
 // native function
-class MalFunction : public MalType
+class MalFunction : public MalCallable
 {
 public:
     //using MalFnPtr = MalType*(*)(span<MalType*>);
@@ -190,20 +201,17 @@ public:
 
     MalFunction(MalFn function) : m_function(function) {}
     EType type() const override { return EType::Function; }
-    std::string to_str(bool) const override { return "<fn>"; }
-    bool operator==(const MalType* other) const override { return other == this; }
-    MalType* call(span<MalType*>);
+    MalType* call(span<MalType*> arguments) override;
 private:
     MalFn m_function;
 };
 
-class MalUserFunction : public MalType
+class MalUserFunction : public MalCallable
 {
 public:
     MalUserFunction(MalType* body, MalSequence* params, Env* env) : m_body(body), m_params(params), m_env(env) {}
     EType type() const override { return EType::UserFunction; }
-    std::string to_str(bool) const override { return "<fn>"; }
-    bool operator==(const MalType* other) const override { return other == this; }
+    MalType* call(span<MalType*> arguments) override;
 
     MalType* get_body() const { return m_body; }
     MalSequence* get_params() const { return m_params; }
@@ -213,4 +221,19 @@ private:
     MalType* m_body;
     MalSequence* m_params;
     Env* m_env;
+};
+
+class MalAtom : public MalType
+{
+public:
+    MalAtom(MalType* value) : m_value(value) {}
+    EType type() const override { return EType::Atom; }
+    std::string to_str(bool) const override { return "(atom " + m_value->to_str() + ")"; }
+    bool operator==(const MalType* other) const override { return other->type() == EType::Atom && other->as<MalAtom>().m_value == m_value; }
+
+    MalType* deref() const { return m_value; }
+    void reset(MalType* value) { m_value = value; }
+
+private:
+    MalType* m_value;
 };

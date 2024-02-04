@@ -1,5 +1,7 @@
 #include <string>
 #include "types.h"
+#include "mal.h"
+#include "env.h"
 
 std::string print_elements(std::vector<MalType*> elements, char opening_character, char closing_character, bool print_readably)
 {
@@ -97,4 +99,9 @@ bool MalMap::operator==(const MalType*) const
 MalType* MalFunction::call(span<MalType*> arguments)
 {
     return m_function(arguments);
+}
+
+MalType* MalUserFunction::call(span<MalType*> arguments)
+{
+    return EVAL(m_body, new Env(m_env, m_params, arguments));
 }

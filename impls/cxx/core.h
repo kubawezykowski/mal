@@ -26,4 +26,13 @@ namespace core
     MalType* less_equals(span<MalType*> arguments);
     MalType* greater(span<MalType*> arguments);
     MalType* greater_equals(span<MalType*> arguments);
+
+    MalType* read_string(span<MalType*> arguments);
+    MalType* slurp(span<MalType*> arguments);
+
+    MalType* atom(span<MalType*> arguments);
+    MalType* is_atom(span<MalType*> arguments);
+    MalType* deref(span<MalType*> arguments);
+    MalType* reset(span<MalType*> arguments);
+    MalType* swap(span<MalType*> arguments);
 }
