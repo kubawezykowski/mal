@@ -91,7 +91,7 @@ MalType* EVAL(MalType* ast, Env* env)
                         {
                             EVAL(list.at(index), env);
                         }
-                        ast = *list.end();
+                        ast = list.at(list.size() - 1);
                         continue; // TCO
                     }
                     else if (first_symbol.name() == "if")
